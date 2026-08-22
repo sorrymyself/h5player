@@ -1,0 +1,129 @@
+name: Web Extension PR
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/setup-web-extension/**'
+      - '.github/workflows/web-extension.yml'
+      - '.github/workflows/web-extension-nightly.yml'
+      - '.github/workflows/web-extension-rc.yml'
+      - 'web-extension/**'
+      - 'project/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - 'config/rollup*'
+      - 'src/h5player/**'
+      - 'src/libs/**'
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-extension-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  legacy-baseline:
+    name: Legacy userscript baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 20.11.0
+      - run: corepack yarn@3.7.0 install --immutable
+      - run: corepack yarn@3.7.0 build
+      - name: Verify deterministic userscript
+        run: |
+          echo '91b5312d7cf150cd852d005b1e5d5f3d8ed2ed7cd8a481dfa1d561d48f7b3f27  dist/h5player.user.js' | sha256sum --check
+          test "$(wc -c < dist/h5player.user.js)" -eq 561788
+          git diff --exit-code -- dist/h5player.user.js
+
+  webext-static:
+    name: Static, test, build, and package smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web-extension
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-web-extension
+      - run: corepack pnpm@11.21.0 check
+      - run: corepack pnpm@11.21.0 test:coverage
+      - run: corepack pnpm@11.21.0 build:all
+      - run: corepack pnpm@11.21.0 test:budget
+      - run: corepack pnpm@11.21.0 test:security
+      - run: corepack pnpm@11.21.0 audit --audit-level high
+      - run: corepack pnpm@11.21.0 exec web-ext lint --source-dir .output/firefox-mv3
+      - name: Resolve reproducible source date
+        id: source-date
+        run: echo "epoch=$(git show -s --format=%ct HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Package and inspect both browsers
+        run: >-
+          corepack pnpm@11.21.0 release:bundle --
+          --channel dev
+          --sequence 0
+          --source-date-epoch "${{ steps.source-date.outputs.epoch }}"
+          --output .release/pr
+          --gate format-lint-typecheck=passed
+          --gate unit-component-integration=passed
+          --gate coverage=passed
+          --gate compatibility-fixtures=passed
+          --gate security-boundaries=passed
+          --gate bundle-budget=passed
+      - run: corepack pnpm@11.21.0 release:verify .release/pr
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: web-extension-pr-evidence
+          path: web-extension/.release/pr
+          if-no-files-found: error
+          retention-days: 7
+
+  chromium-e2e:
+    name: Chromium extension E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web-extension
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-web-extension
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-playwright-1.62.1-chromium
+      - run: corepack pnpm@11.21.0 exec playwright install --with-deps chromium
+      - run: corepack pnpm@11.21.0 test:e2e
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: web-extension/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+  firefox-e2e:
+    name: Firefox extension E2E and lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web-extension
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-web-extension
+      - run: corepack pnpm@11.21.0 test:e2e:firefox

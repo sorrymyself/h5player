@@ -1,0 +1,17 @@
+{
+  "nodeVersion": "20.11.0",
+  "yarnVersion": "3.7.0",
+  "command": "corepack yarn@3.7.0 build",
+  "artifact": "dist/h5player.user.js",
+  "sha256": "91b5312d7cf150cd852d005b1e5d5f3d8ed2ed7cd8a481dfa1d561d48f7b3f27",
+  "bytes": 561788,
+  "legacyReleaseCommit": "0571852",
+  "sourcePaths": [
+    ".yarnrc.yml",
+    "package.json",
+    "yarn.lock",
+    "config",
+    "src",
+    "dist/h5player.user.js"
+  ]
+}

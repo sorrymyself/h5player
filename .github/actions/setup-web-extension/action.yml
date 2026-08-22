@@ -1,0 +1,40 @@
+name: Setup Web Extension toolchain
+description: Install the pinned Node and pnpm toolchain with a lockfile-keyed pnpm store cache.
+
+inputs:
+  node-version:
+    description: Exact Node.js version
+    required: false
+    default: 24.13.0
+  pnpm-version:
+    description: Exact pnpm version
+    required: false
+    default: 11.21.0
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Cache pnpm store
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      with:
+        path: ${{ runner.temp }}/h5player-pnpm-store
+        key: ${{ runner.os }}-${{ runner.arch }}-node-${{ inputs.node-version }}-pnpm-${{ inputs.pnpm-version }}-${{ hashFiles('web-extension/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-node-${{ inputs.node-version }}-pnpm-${{ inputs.pnpm-version }}-
+
+    - name: Install frozen dependencies
+      shell: bash
+      working-directory: web-extension
+      env:
+        H5PLAYER_PNPM_VERSION: ${{ inputs.pnpm-version }}
+      run: |
+        set -euo pipefail
+        [[ "$H5PLAYER_PNPM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "invalid pnpm version" >&2; exit 1; }
+        corepack "pnpm@${H5PLAYER_PNPM_VERSION}" install \
+          --frozen-lockfile \
+          --store-dir "${RUNNER_TEMP}/h5player-pnpm-store"

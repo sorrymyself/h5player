@@ -1,0 +1,116 @@
+:root {
+  color-scheme: dark;
+  --h5-bg: #101519;
+  --h5-bg-elevated: #171f24;
+  --h5-surface: #1d282e;
+  --h5-surface-raised: #26343a;
+  --h5-border: #3a4a4f;
+  --h5-border-soft: #2b393e;
+  --h5-text: #edf3ed;
+  --h5-text-muted: #a9b8b4;
+  --h5-text-faint: #73837f;
+  --h5-accent: #ef9d4d;
+  --h5-accent-strong: #ffbd68;
+  --h5-accent-ink: #1a1711;
+  --h5-teal: #7bc7b6;
+  --h5-danger: #f27b72;
+  --h5-warning: #f3c969;
+  --h5-success: #9bd58f;
+  --h5-focus: #ffd18c;
+  --h5-shadow: 0 18px 50px rgb(0 0 0 / 0.28);
+  --h5-radius-sm: 8px;
+  --h5-radius-md: 14px;
+  --h5-radius-lg: 22px;
+  --h5-space-1: 4px;
+  --h5-space-2: 8px;
+  --h5-space-3: 12px;
+  --h5-space-4: 16px;
+  --h5-space-5: 20px;
+  --h5-space-6: 24px;
+  --h5-space-8: 32px;
+  --h5-space-10: 40px;
+  --h5-motion-fast: 140ms;
+  --h5-motion-base: 220ms;
+  --h5-font-display: 'DIN Alternate', 'Avenir Next Condensed', 'PingFang SC', sans-serif;
+  --h5-font-body: 'Avenir Next', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --h5-font-mono: 'SFMono-Regular', 'Cascadia Code', 'Roboto Mono', monospace;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --h5-bg: #f1eee5;
+  --h5-bg-elevated: #faf8f1;
+  --h5-surface: #fffdf7;
+  --h5-surface-raised: #f5efe3;
+  --h5-border: #c9c1b2;
+  --h5-border-soft: #dfd8ca;
+  --h5-text: #1d2928;
+  --h5-text-muted: #53625e;
+  --h5-text-faint: #7c8983;
+  --h5-accent: #bd672d;
+  --h5-accent-strong: #a9541e;
+  --h5-accent-ink: #fffaf1;
+  --h5-teal: #177c72;
+  --h5-danger: #b8463d;
+  --h5-warning: #9a6d15;
+  --h5-success: #3c7c35;
+  --h5-focus: #9e551f;
+  --h5-shadow: 0 18px 50px rgb(75 58 31 / 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--h5-bg);
+  color: var(--h5-text);
+  font-family: var(--h5-font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--h5-focus);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--h5-accent);
+  color: var(--h5-accent-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

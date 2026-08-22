@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Iframe-only media fixture</title>
+    <style>
+      body {
+        margin: 24px;
+        font-family: sans-serif;
+      }
+
+      iframe {
+        display: block;
+        width: 720px;
+        height: 430px;
+        border: 1px solid #666;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Iframe-only media fixture</h1>
+    <div>
+      <button id="remove-frame" type="button">Remove frame</button>
+      <button id="restore-frame" type="button">Restore frame</button>
+      <button id="reload-frame" type="button">Reload frame</button>
+      <button id="use-cross-origin" type="button">Use cross-origin frame</button>
+    </div>
+    <div id="frame-slot"></div>
+    <script>
+      const slot = document.querySelector('#frame-slot')
+      let frameSource = '/same-origin-frame.html'
+      const mount = () => {
+        if (slot.querySelector('iframe')) return
+        const frame = document.createElement('iframe')
+        frame.title = 'iframe-only-player'
+        frame.src = frameSource
+        slot.append(frame)
+      }
+      document.querySelector('#remove-frame').addEventListener('click', () => {
+        slot.querySelector('iframe')?.remove()
+      })
+      document.querySelector('#restore-frame').addEventListener('click', () => {
+        if (slot.querySelector('iframe')) return
+        const previousSource = frameSource
+        frameSource = `${previousSource}${previousSource.includes('?') ? '&' : '?'}restore=${Date.now()}`
+        mount()
+        frameSource = previousSource
+      })
+      document.querySelector('#reload-frame').addEventListener('click', () => {
+        const frame = slot.querySelector('iframe')
+        if (frame) {
+          const separator = frameSource.includes('?') ? '&' : '?'
+          frame.src = `${frameSource}${separator}reload=${Date.now()}`
+        }
+      })
+      document.querySelector('#use-cross-origin').addEventListener('click', () => {
+        frameSource = 'http://127.0.0.1:47174/cross-origin-frame.html'
+        slot.querySelector('iframe')?.remove()
+        mount()
+      })
+      mount()
+    </script>
+  </body>
+</html>

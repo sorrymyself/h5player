@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>H5Player fixture: media anchor</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 1800px;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 12px;
+        background: #f1f4f6;
+      }
+      main {
+        padding: 64px 24px 1200px;
+      }
+      #anchored-video {
+        display: block;
+        width: 640px;
+        height: 360px;
+        margin: 120px auto 24px;
+        background: #18232d;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      button {
+        min-height: 36px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="controls">
+        <button type="button" id="move">Move media</button>
+        <button type="button" id="resize">Resize media</button>
+        <button type="button" id="replace">Replace media</button>
+        <button type="button" id="remove">Remove media</button>
+      </div>
+    </header>
+    <main id="stage">
+      <video id="anchored-video" controls tabindex="0"></video>
+    </main>
+    <script>
+      const stage = document.querySelector('#stage')
+      const video = () => document.querySelector('#anchored-video')
+      document.querySelector('#move').addEventListener('click', () => {
+        const element = video()
+        if (element) element.style.marginTop = '260px'
+      })
+      document.querySelector('#resize').addEventListener('click', () => {
+        const element = video()
+        if (element) {
+          element.style.width = '720px'
+          element.style.height = '405px'
+        }
+      })
+      document.querySelector('#replace').addEventListener('click', () => {
+        const previous = video()
+        if (!previous || !stage) return
+        const replacement = document.createElement('video')
+        replacement.id = 'anchored-video'
+        replacement.controls = true
+        replacement.tabIndex = 0
+        replacement.style.cssText = previous.style.cssText
+        previous.replaceWith(replacement)
+      })
+      document.querySelector('#remove').addEventListener('click', () => video()?.remove())
+    </script>
+  </body>
+</html>

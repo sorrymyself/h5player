@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Shadow DOM fixture</title>
+  </head>
+  <body>
+    <media-shell></media-shell>
+    <script>
+      const host = document.querySelector('media-shell')
+      const shadow = host.attachShadow({ mode: 'open' })
+      shadow.innerHTML = '<video controls></video>'
+    </script>
+  </body>
+</html>

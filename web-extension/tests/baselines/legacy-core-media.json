@@ -1,0 +1,90 @@
+{
+  "legacyReleaseCommit": "0571852",
+  "legacyArtifactSha256": "91b5312d7cf150cd852d005b1e5d5f3d8ed2ed7cd8a481dfa1d561d48f7b3f27",
+  "sources": [
+    "src/h5player/h5player.js:setPlaybackRate/setPlaybackRateUp/setPlaybackRateDown",
+    "src/h5player/h5player.js:setCurrentTimeUp/setCurrentTimeDown",
+    "src/h5player/h5player.js:setVolume/setVolumeUp/setVolumeDown",
+    "src/h5player/h5player.js:switchPlayStatus"
+  ],
+  "cases": [
+    {
+      "id": "play-paused-media",
+      "initial": { "state": "paused" },
+      "command": { "type": "media.play", "mediaId": "media-1" },
+      "expected": { "changed": true, "state": "active" }
+    },
+    {
+      "id": "pause-active-media",
+      "initial": { "state": "active" },
+      "command": { "type": "media.pause", "mediaId": "media-1" },
+      "expected": { "changed": true, "state": "paused" }
+    },
+    {
+      "id": "seek-forward-default-step",
+      "initial": { "currentTime": 10, "duration": 100 },
+      "command": { "type": "media.seek", "mediaId": "media-1", "deltaSeconds": 5 },
+      "expected": { "changed": true, "currentTime": 15 }
+    },
+    {
+      "id": "seek-backward-near-zero",
+      "initial": { "currentTime": 1.04, "duration": 100 },
+      "command": { "type": "media.seek", "mediaId": "media-1", "deltaSeconds": -0.05 },
+      "expected": { "changed": true, "currentTime": 0 }
+    },
+    {
+      "id": "seek-clamped-to-duration",
+      "initial": { "currentTime": 98, "duration": 100 },
+      "command": { "type": "media.seek", "mediaId": "media-1", "deltaSeconds": 5 },
+      "expected": { "changed": true, "currentTime": 100 }
+    },
+    {
+      "id": "adjust-rate-default-step",
+      "initial": { "playbackRate": 1 },
+      "command": { "type": "media.adjust-rate", "mediaId": "media-1", "delta": 0.1 },
+      "expected": { "changed": true, "playbackRate": 1.1 }
+    },
+    {
+      "id": "set-rate-one-decimal",
+      "initial": { "playbackRate": 1 },
+      "command": { "type": "media.set-rate", "mediaId": "media-1", "value": 1.26 },
+      "expected": { "changed": true, "playbackRate": 1.3 }
+    },
+    {
+      "id": "adjust-rate-upper-bound",
+      "initial": { "playbackRate": 15.9 },
+      "command": { "type": "media.adjust-rate", "mediaId": "media-1", "delta": 1 },
+      "expected": { "changed": true, "playbackRate": 16 }
+    },
+    {
+      "id": "adjust-rate-lower-bound",
+      "initial": { "playbackRate": 0.1 },
+      "command": { "type": "media.adjust-rate", "mediaId": "media-1", "delta": -0.1 },
+      "expected": { "changed": false, "playbackRate": 0.1 }
+    },
+    {
+      "id": "adjust-volume-default-step-unmutes",
+      "initial": { "volume": 0.5, "muted": true },
+      "command": { "type": "media.adjust-volume", "mediaId": "media-1", "delta": 0.05 },
+      "expected": { "changed": true, "volume": 0.55, "muted": false }
+    },
+    {
+      "id": "set-volume-two-decimals",
+      "initial": { "volume": 0.5 },
+      "command": { "type": "media.set-volume", "mediaId": "media-1", "value": 0.556 },
+      "expected": { "changed": true, "volume": 0.56 }
+    },
+    {
+      "id": "adjust-volume-lower-bound",
+      "initial": { "volume": 0.02 },
+      "command": { "type": "media.adjust-volume", "mediaId": "media-1", "delta": -0.05 },
+      "expected": { "changed": true, "volume": 0 }
+    },
+    {
+      "id": "toggle-mute",
+      "initial": { "muted": false },
+      "command": { "type": "media.toggle-mute", "mediaId": "media-1" },
+      "expected": { "changed": true, "muted": true }
+    }
+  ]
+}

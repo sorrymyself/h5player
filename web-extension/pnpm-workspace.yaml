@@ -1,0 +1,9 @@
+allowBuilds:
+  esbuild: true
+auditConfig:
+  ignoreGhsas:
+    - GHSA-w3rx-r6r6-pgpr
+    - GHSA-5p2g-fcmc-qvqq
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - tsx@4.23.12

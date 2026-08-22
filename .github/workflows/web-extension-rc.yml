@@ -1,0 +1,160 @@
+name: Web Extension RC Evidence (No Publish)
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Candidate manifest profile
+        required: true
+        type: choice
+        options: [alpha, beta, rc, stable]
+        default: beta
+      sequence:
+        description: Candidate sequence (Stable must use 0)
+        required: true
+        default: '1'
+      source_date_epoch:
+        description: Reproducible Unix timestamp fixed for this candidate
+        required: true
+      candidate_id:
+        description: Human release-candidate record ID (for example RC-20260811-01)
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-extension-rc-${{ github.ref }}-${{ inputs.channel }}-${{ inputs.sequence }}
+  cancel-in-progress: false
+
+jobs:
+  legacy-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 20.11.0
+      - run: corepack yarn@3.7.0 install --immutable
+      - run: corepack yarn@3.7.0 build
+      - run: echo '91b5312d7cf150cd852d005b1e5d5f3d8ed2ed7cd8a481dfa1d561d48f7b3f27  dist/h5player.user.js' | sha256sum --check
+      - run: test "$(wc -c < dist/h5player.user.js)" -eq 561788
+      - run: git diff --exit-code -- dist/h5player.user.js
+
+  static-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web-extension
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-web-extension
+      - run: corepack pnpm@11.21.0 check
+      - run: corepack pnpm@11.21.0 test:coverage
+      - run: corepack pnpm@11.21.0 build:all
+      - run: corepack pnpm@11.21.0 test:budget
+      - run: corepack pnpm@11.21.0 test:security
+      - run: corepack pnpm@11.21.0 audit --audit-level high
+      - run: corepack pnpm@11.21.0 exec web-ext lint --source-dir .output/firefox-mv3
+
+  chromium-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web-extension
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-web-extension
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-playwright-1.62.1-chromium
+      - run: corepack pnpm@11.21.0 exec playwright install --with-deps chromium
+      - run: corepack pnpm@11.21.0 test:e2e
+
+  firefox-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web-extension
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-web-extension
+      - run: corepack pnpm@11.21.0 test:e2e:firefox
+
+  churn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: web-extension
+    env:
+      H5PLAYER_CHURN_DURATION_MS: '1800000'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-web-extension
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-playwright-1.62.1-chromium
+      - run: corepack pnpm@11.21.0 exec playwright install --with-deps chromium
+      - run: corepack pnpm@11.21.0 build:chrome
+      - run: corepack pnpm@11.21.0 test:churn
+
+  release-evidence:
+    needs: [legacy-baseline, static-gates, chromium-e2e, firefox-e2e, churn]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: web-extension
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-web-extension
+      - name: Build twice and compare candidate evidence
+        env:
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+          RELEASE_SEQUENCE: ${{ inputs.sequence }}
+          RELEASE_SOURCE_DATE_EPOCH: ${{ inputs.source_date_epoch }}
+        run: |
+          set -euo pipefail
+          case "$RELEASE_CHANNEL" in alpha|beta|rc|stable) ;; *) echo "invalid channel" >&2; exit 1 ;; esac
+          [[ "$RELEASE_SEQUENCE" =~ ^(0|[1-9][0-9]*)$ ]] || { echo "invalid sequence" >&2; exit 1; }
+          [[ "$RELEASE_SOURCE_DATE_EPOCH" =~ ^(0|[1-9][0-9]*)$ ]] || { echo "invalid source date" >&2; exit 1; }
+          corepack pnpm@11.21.0 release:reproducibility -- \
+            --channel "$RELEASE_CHANNEL" \
+            --sequence "$RELEASE_SEQUENCE" \
+            --source-date-epoch "$RELEASE_SOURCE_DATE_EPOCH" \
+            --output .release/rc \
+            --gate format-lint-typecheck=passed \
+            --gate unit-component-integration=passed \
+            --gate coverage=passed \
+            --gate compatibility-fixtures=passed \
+            --gate security-boundaries=passed \
+            --gate bundle-budget=passed \
+            --gate chromium-e2e=passed \
+            --gate firefox-e2e=passed \
+            --gate churn-30m=passed \
+            --gate legacy-baseline=passed
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: web-extension-${{ inputs.candidate_id }}-${{ inputs.channel }}-${{ inputs.sequence }}
+          path: web-extension/.release/rc
+          if-no-files-found: error
+          retention-days: 30

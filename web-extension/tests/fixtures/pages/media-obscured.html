@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>H5Player fixture: media obscured</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+      }
+      video {
+        display: block;
+        background: #18232d;
+        margin: 12px 0;
+      }
+      #primary,
+      #secondary {
+        width: 640px;
+        height: 360px;
+      }
+      #ad {
+        width: 120px;
+        height: 60px;
+      }
+      #hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Multiple media fixture</h1>
+    <video id="primary" controls></video>
+    <video id="secondary" controls></video>
+    <video id="ad" controls></video>
+    <video id="hidden" controls></video>
+    <audio id="background-audio" controls></audio>
+  </body>
+</html>

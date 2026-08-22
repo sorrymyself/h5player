@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hostile page fixture</title>
+  </head>
+  <body>
+    <script>
+      Object.defineProperty(window, 'h5playerWebext', { configurable: false, value: 'page-owned' })
+      Object.defineProperty(HTMLMediaElement.prototype, 'playbackRate', {
+        configurable: true,
+        get() {
+          return 1
+        },
+        set() {}
+      })
+    </script>
+    <video controls></video>
+  </body>
+</html>

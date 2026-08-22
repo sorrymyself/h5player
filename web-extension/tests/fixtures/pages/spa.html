@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SPA fixture</title>
+  </head>
+  <body>
+    <button id="add" type="button">Add media</button>
+    <button id="remove" type="button">Remove media</button>
+    <section id="mount"></section>
+    <script>
+      const mount = document.querySelector('#mount')
+      document.querySelector('#add').addEventListener('click', () => {
+        if (!mount.querySelector('video'))
+          mount.insertAdjacentHTML('beforeend', '<video controls></video>')
+      })
+      document.querySelector('#remove').addEventListener('click', () => mount.replaceChildren())
+    </script>
+  </body>
+</html>
